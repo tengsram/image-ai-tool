@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Image Generator</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    input, button {
+      padding: 12px;
+      width: 90%;
+      max-width: 500px;
+      margin: 10px;
+      font-size: 16px;
+    }
+    button {
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    img {
+      max-width: 90%;
+      margin-top: 20px;
+      border-radius: 10px;
+      border: 2px solid #ddd;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 700px;
+      margin: auto;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>🔥 AI Image Generator Tool</h2>
+  <p>Enter your prompt below and generate an AI image</p>
+
+  <input type="text" id="prompt" placeholder="Example: a cute puppy in the rain">
+
+  <button onclick="generateImage()">Generate Image</button>
+
+  <p id="status"></p>
+
+  <img id="result" src="" />
+</div>
+
+<script>
+async function generateImage() {
+  const prompt = document.getElementById("prompt").value;
+
+  document.getElementById("status").innerText = "⏳ Generating... Please wait";
+  document.getElementById("result").src = "";
+
+  const response = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
+    headers: {
+      "Authorization": "Token YOUR_API_TOKEN_HERE",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      version: "MODEL_VERSION_ID_HERE",
+      input: {
+        prompt: prompt
+      }
+    })
+  });
+
+  const data = await response.json();
+
+  if (!data.urls) {
+    document.getElementById("status").innerText = "❌ Error: Check API Token or Version ID.";
+    return;
+  }
+
+  const predictionUrl = data.urls.get;
+
+  while (true) {
+    const pollResponse = await fetch(predictionUrl, {
+      headers: {
+        "Authorization": "Token YOUR_API_TOKEN_HERE"
+      }
+    });
+
+    const pollData = await pollResponse.json();
+
+    if (pollData.status === "succeeded") {
+      document.getElementById("status").innerText = "✅ Done!";
+      document.getElementById("result").src = pollData.output[0];
+      break;
+    }
+
+    if (pollData.status === "failed") {
+      document.getElementById("status").innerText = "❌ Failed! Try another prompt.";
+      break;
+    }
+
+    await new Promise(r => setTimeout(r, 2000));
+  }
+}
+</script>
+
+</body>
+</html>
